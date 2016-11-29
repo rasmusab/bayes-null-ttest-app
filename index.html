@@ -1,9 +1,320 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title></title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<title>Bayesian Estimation Supersedes the t-test (BEST) - Online</title>
+<link href='http://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="css/squaregrid.css" />
+
+<style type="text/css">
+.legendLabel {
+  font-size:11px; line-height:0px; 
+}
+.item_title, .item_description { 
+    font-size:14px; line-height:125%; text-align: center; padding-top: 5px;
+
+}
+.about { 
+    font-size:14px; line-height:125%; text-align: center; color: gray;
+}
+body { font-family: 'Open Sans', sans-serif; background-color:#ffffff; font-size:15px; line-height:18px; }
+</style>
+<!--<script type="text/javascript" src="js/jquery-1.4.4.min.js"></script> -->
+ <script type="text/javascript"  src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script> 
+ <!--<script type="text/javascript" src="js/jquery-ui-1.8.9.min.js"></script>-->
+
+<script type="text/javascript" src="js/jquery.flot.min.js"></script>
+<script type="text/javascript" src="js/jstat.js"></script>
+<script type="text/javascript" src="js/js_mcmc.js"></script>
+<script type="text/javascript">
+
+    var burn_timeout_id
+    var sample_timeout_id
+    var plot_timeout_id
+    
+    $(document).ready(function() {
+        $("#diff_plots_div").hide();
+        $("#more_results_wrapper_div").hide();
+        
+    });
+    
+    function write_log(s) {
+        $("#log").val($("#log").val() + s)
+        $("#log").scrollTop($("#log")[0].scrollHeight);
+    }
+
+    function run_BEST() {
+        write_log("\n")
+        window.clearTimeout(burn_timeout_id)
+        window.clearTimeout(sample_timeout_id)
+        window.clearTimeout(plot_timeout_id)
+        $("#start_button").html('Click to restart!');
+
+        y1 = string_to_num_array($("#data_group_1").val())
+        y2 = string_to_num_array($("#data_group_2").val())
+
+        try {
+            jStat.map(y1.concat(y2), function(x) {if(x - 0 != x) throw "ERROR"})
+        } catch(err) {
+            write_log("ERROR: Data not supplied for both groups or not formatted correctly.\n")
+            return
+        }
+
+        var n_samples = parseInt($("#nbr_of_samples_input").val()) + 10
+        var n_burnin = parseInt($("#nbr_of_burnin_input").val())
+
+
+
+
+        if(n_samples < 1 || n_burnin < 1 || n_samples - 0 != n_samples || n_burnin - 0 != n_burnin) {
+            write_log("ERROR: Nbr of burn-in samples and nbr of regular samples should be > 1, right?\n")
+            return
+        }
+
+        var posterior = make_BEST_posterior_func(y1, y2)
+
+        // Function to calculate some more statistics from the chain
+        var data_calc = function(params) {
+            var mu_diff = params[0] - params[1]
+            var sd_diff = params[2] - params[3]
+            var effect_size = (params[0] - params[1]) / Math.sqrt((Math.pow(params[2], 2) + Math.pow(params[3], 2)) / 2 )
+            var normality = Math.log(params[4]) / Math.LN10
+            return [mu_diff, sd_diff, normality, effect_size]
+        }
+
+        var inits = [jStat.mean(y1), jStat.mean(y2), jStat.stdev(y1), jStat.stdev(y2), 5]
+
+        var sampler = new amwg(inits, posterior, data_calc)
+
+        function burn_asynch(n) {
+            sampler.burn(500)
+            write_log("*")
+            if(n > 0) {
+                burn_timeout_id = setTimeout(function() {burn_asynch(n - 1)}, 0)
+            } else {
+                if(! isFinite(sampler.get_curr_post_dens())) {
+                write_log("Warning: At the end of the burn-in phase the log-posterior was " + sampler.get_curr_post_dens() + " which is probably due to floating point errors in the javascript code. Try a longer burn-in phase.")    
+            }
+                write_log("\n-- Finished Burn in phase --\n")
+                write_log("\n-- Started sampling phase --\n")
+                $("#diff_plots_div").show();
+                sample_timeout_id = sampler.n_samples_asynch(n_samples, 50)
+                plot_asynch()
+            }
+        }
+        
+
+        function plot_asynch() {
+            var plot_start_time = new Date()
+            var chain = sampler.get_chain()
+            var plot_data = chain_to_plot_data(chain, Math.ceil(n_samples / 1000))
+            plot_mcmc_chain("group_diff_plot", plot_data[5], "samples")
+            //plot_mcmc_chain("plot3", plot_data[2] , "title2")
+            //plot_mcmc_chain("plot5", plot_data[4], "title3")
+
+            plot_mcmc_hist("group_diff_hist", param_chain(chain, 5), true, 0)
+            //plot_mcmc_hist("plot4", param_chain(sampler.get_chain(), 2), true)
+            //plot_mcmc_hist("plot6", param_chain(sampler.get_chain(), 4), true)
+            
+            var plot_time = (new Date()) - plot_start_time
+            if(sampler.is_running_asynch()) {
+                plot_timeout_id = setTimeout(function() {plot_asynch()}, plot_time * 2 )
+            } else {
+                write_log("\n -- Finished sampling phase --\n ")
+                write_log("-- Results plotted below --\n ")
+                $("#more_results_wrapper_div").show();
+                log_t_test()
+                show_result()
+
+            }
+        }
+
+        function log_t_test() {
+            var t_res = paired_t_test(y1, y2)
+            var mean_diff = t_res[0].toPrecision(4)
+            var t = t_res[1].toPrecision(4)
+            var p = t_res[2].toPrecision(4)
+            write_log("\n-- For comparison, a standard two-tailed t-test --\n ")
+            write_log("Mean group difference: " + mean_diff + "\n ")
+            write_log("t: " + t + "\n ")
+            write_log("p: " + p + "\n ")
+
+        }
+
+        function show_result() {
+            var chain = sampler.get_chain()
+            var plot_data = chain_to_plot_data(chain, Math.ceil(n_samples / 1000))
+            mean_chains = param_chain(chain, 0).concat(param_chain(chain, 1))
+            mean_xlim = [jStat.min(mean_chains), jStat.max(mean_chains)]
+            sd_chains = param_chain(chain, 2).concat(param_chain(chain, 3))
+            sd_xlim = [jStat.min(sd_chains), jStat.max(sd_chains)]
+
+            plot_mcmc_chain("group_diff_plot", plot_data[5], "samples")
+            plot_mcmc_chain("group1_mean_plot", plot_data[0], "samples")
+            plot_mcmc_chain("group1_sd_plot", plot_data[2], "samples")
+            plot_mcmc_chain("group2_mean_plot", plot_data[1], "samples")
+            plot_mcmc_chain("group2_sd_plot", plot_data[3], "samples")
+            plot_mcmc_chain("sd_diff_plot", plot_data[6], "samples")
+            plot_mcmc_chain("normality_plot", plot_data[7], "samples")
+            plot_mcmc_chain("effect_size_plot", plot_data[8], "samples")
+
+            plot_mcmc_hist("group_diff_hist", param_chain(chain, 5), true, 0)
+            plot_mcmc_hist("group1_mean_hist", param_chain(chain, 0), true, null, mean_xlim)
+            plot_mcmc_hist("group1_sd_hist", param_chain(chain, 2), true, null, sd_xlim)
+            plot_mcmc_hist("group2_mean_hist", param_chain(chain, 1), true, null, mean_xlim)
+            plot_mcmc_hist("group2_sd_hist", param_chain(chain, 3), true, null, sd_xlim)
+            plot_mcmc_hist("sd_diff_hist", param_chain(chain, 6), true, 0)
+            plot_mcmc_hist("normality_hist", param_chain(chain, 7), true)
+            plot_mcmc_hist("effect_size_hist", param_chain(chain, 8), true, 0)
+
+        }
+
+        write_log("-- Started Burn in phase --\n")
+        burn_asynch(Math.ceil(n_burnin /  500))
+    }
+</script>
 </head>
 <body>
-The Bayesian t-test web app will appear here. 
+<div id="wrapper"><!-- you need both the wrapper and container -->
+<div id="container">
+
+<!-- Just an example of a layout, so you can see how it works. -->
+<!-- Please delete this line once you're done. <style>#example-a, #example-b, #example-c, #example-d1, #example-d2{background:yellow; height:800px; margin-top:14px;filter:alpha(opacity=30); -moz-opacity:0.3; -khtml-opacity: 0.3; opacity: 0.3;}</style>-->
+<div id="title_div" class="sg-35" style="margin: 0 14px 0px"><h1>Bayesian Estimation Supersedes the t-test (BEST) - online</h1>
+</div>
+<div id="data_and_log_div" class="sg-35 sgParent">
+    <div id="log_wrapper_div" class="sg-8 borderRight">
+        <br/>
+            <!-- Lengths of the winners of the 2012 NBA Finals, Miami Heat. -->
+    <div class="item_title">Data - Group 1</div><textarea id="data_group_1" style= "width: 100%; height: 100px; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; " >1.96 2.06 2.03 2.11 1.88 1.88 2.08 1.93 2.03 2.03 2.03 2.08 2.03 2.11 1.93</textarea>
+
+    <!-- Lengths of 2012 Stanley cup winners, Los Angeles Kings. -->
+    <div class="item_title">Data - Group 2</div><textarea id="data_group_2" style= "width: 100%; height: 100px; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; " >1.83 1.93 1.88 1.85 1.85 1.91 1.91 1.85 1.78 1.91 1.93 1.80 1.80 1.85 1.93 1.85 1.83 1.85 1.91 1.85 1.91 1.85 1.80 1.80 1.85</textarea>
+    </div>
+    <div id="title_and_instructions_div" class="sg-25">    
+        <p>
+            This page implements an online version of John Kruschke's <a href="http://www.indiana.edu/~kruschke/BEST/"><i>Bayesian estimation supersedes the t-test (BEST)</i></a>, a Bayesian model that can be used where you classically would use a two-sample t-test. BEST estimates the difference in means between two groups and yields a probability distribution over the difference. From this distribution we can take the mean credible value as our best guess of the actual difference and the 95% <i>Highest Density Interval</i> (HDI) as the range were the actual difference is with 95% credibility. It can also be useful to look at how credible it is that the difference between the two groups is &lt; 0 or &gt; 0.
+        </p>
+        <p>
+            To try it out just enter some data below or run with the data that is already entered, the heights in m of the winning team of the 2012 NBA finals (group 1) and the winning team of Stanley cup 2012 (group 2). Data can be entered in almost any way, separated by spaces, commas, newlines, etc.
+        </p>
+        <!--<p>
+            The MCMC method used is an adaptive Metropolis-within-Gibbs sampler described by <a href="http://dx.doi.org/10.1198/jcgs.2009.06134 ">Roberts and Rosenthal (2009)</a>. Everything is implemented in javascript and runs in the browser. If the output looks strange try to increase the number of burn-in steps and the number of sample steps.
+        </p>-->
+    </div>
+</div>
+
+<div id="data_and_log_div2" class="sg-35 sgParent">
+    <div id="data_group_1_div" class="sg-8">
+        <div class="item_title">Prior prob. of no difference: <span id="null_prior_label">0.5</span> </div>
+        <input type="range" id="null_prior" min="0.01" max="0.99" step = "0.01" defaultValue="0.5" oninput="update_null_prior_label()" style= "width: 90%">
+        <script type="text/javascript">
+            function update_null_prior_label() {
+                document.getElementById('null_prior_label').innerHTML=document.getElementById('null_prior').value;
+            }
+            update_null_prior_label() 
+        </script>
+
+        <div class="item_title">Scale of effect size prior</div>
+        <select id="prior_scale">
+            <option value="0.7071068">Medium: sqrt(2)/2</option>
+            <option value="1.0">Wide: 1.0</option>
+            <option value="1.414214">Ultrawide: sqrt(2)</option>
+        </select> 
+
+        <div class="item_title">Nbr of burn-in samples</div>
+        <input id="nbr_of_burnin_input" type="text" name="nbr_of_burnin" style="width: 90%;" value = "2000"/>
+        <div class="item_title">Nbr of samples</div>
+        <input id="nbr_of_samples_input" type="text" name="nbr_of_samples" value = "2000" style="width: 90%;"/>
+        <br/><br/>
+        <button id="start_button" type="button" onclick="run_BEST()" style="width: 100%; height: 40px">Click to start!</button>
+    </div>
+
+    <div id="log_wrapper_div" class="sg-7"> 
+        <div class="item_title">Log</div>
+        <textarea id="log" style= "width: 100%; height: 200px; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; " ></textarea>
+        </div>
+
+    <div id="diff_plots_div">
+
+
+        <div id="group_diff_plot_wrapper_div" class="sg-8">
+             <div class="item_title">Trace Plot - Difference of Means</div>
+            <div id="group_diff_plot" style="height: 200px;"></div> 
+            <div class="item_description">Should look like a "hairy caterpillar"...</div>
+        </div>
+        <div id="group_diff_hist_wrapper_div" class="sg-8">
+             <div class="item_title">Distribution - Difference of Means</div>
+            <div id="group_diff_hist" style="height: 200px;"></div>
+            <div class="item_description">If the 95% Highest Density Interval does not include zero there is a credible difference!</div>
+        </div>
+
+
+
+
+    </div>
+</div>
+
+<div id="more_results_wrapper_div">
+    <div id="more_results_parent_div" class="sg-35 sgParent">
+        <div id="more_results_div" class="sg-35 borderLeft"><h2>More Results - The Rest of the Parameters!</h2> <p>Even though the difference between the means of the groups usually is the main interest, BEST also estimates other parameters. Except for the means and SDs of the groups BEST estimates a measure of to what degree there are outliers in the data that makes the distribution of the data deviate from normality. This measure is labeled "Normality" below where a normality estimate &lt; 1.5 indicates that the data isn't normally distributed. BEST is however robust to outliers to some degree while outliers are a problem for a classical t-test. More about the assumptions of BEST and the advantages of Bayesian estimation is found in <a href="http://www.indiana.edu/~kruschke/BEST/">Kruschke (2012)</a>.</p> 
+        </div>
+        
+    </div>
+    <div id="group1_mean_plot_wrapper_div" class="sg-8"> <div class="item_title">Trace plot - Mean Group 1</div> <div id="group1_mean_plot" style="height: 175px;"></div> </div>
+    <div id="group1_mean_hist_wrapper_div" class="sg-8 borderRight"> <div class="item_title">Density - Mean Group 1</div> <div id="group1_mean_hist" style="height: 175px;"></div> </div>
+    <div id="group1_sd_plot_wrapper_div" class="sg-8"> <div class="item_title">Trace plot - SD Group 1</div> <div id="group1_sd_plot" style="height: 175px;"></div> </div>
+    <div id="group1_sd_hist_wrapper_div" class="sg-8"> <div class="item_title">Density - SD Group 1</div> <div id="group1_sd_hist" style="height: 175px;"></div> </div>
+    <div id="group2_mean_plot_wrapper_div" class="sg-8"><div class="item_title">Trace plot - Mean Group 2</div> <div id="group2_mean_plot" style="height: 175px;"></div> </div>
+    <div id="group2_mean_hist_wrapper_div" class="sg-8 borderRight"><div class="item_title">Density - Mean Group 2</div> <div id="group2_mean_hist" style="height: 175px;"></div> </div>
+    <div id="group2_sd_plot_wrapper_div" class="sg-8"><div class="item_title">Trace plot - SD Group 2</div> <div id="group2_sd_plot" style="height: 175px;"></div> </div>
+    <div id="group2_sd_hist_wrapper_div" class="sg-8"><div class="item_title">Density - SD Group 2</div> <div id="group2_sd_hist" style="height: 175px;"></div> </div>
+    <div id="normality_plot_wrapper_div" class="sg-8 "><div class="item_title">Trace plot - Normality</div> <div id="normality_plot" style="height: 175px;"></div> </div>
+    <div id="normality_hist_wrapper_div" class="sg-8 borderRight"> <div class="item_title">Density - Normality</div> <div id="normality_hist" style="height: 175px;"></div> </div>
+    
+    <div id="group_sd_diff_plot_wrapper_div" class="sg-8"><div class="item_title">Trace plot - Difference of SDs</div> <div id="sd_diff_plot" style="height: 175px;"></div> </div>
+    <div id="group_sd_diff_hist_wrapper_div" class="sg-8"><div class="item_title">Density -Difference of SDs</div> <div id="sd_diff_hist" style="height: 175px;"></div> </div>
+
+    <div id="effect_size_plot_wrapper_div" class="sg-8 "><div class="item_title">Trace plot - Effect Size</div> <div id="effect_size_plot" style="height: 175px;"></div> </div>
+    <div id="effect_size_wrapper_div" class="sg-8 borderRight"> 
+        <div class="item_title">Density - Effect Size</div> 
+        <div id="effect_size_hist" style="height: 175px;"></div>
+        <div class="item_description">(μ₁ - μ₂) / sqrt( (σ₁² + σ₂²) / 2)</div>
+    </div>
+
+    
+    
+    
+
+    <div id="know_more_div" class="sg-8 borderRight">
+        <b>A Word of Caution.</b>
+        Even though this online version of BEST <i>should</i> give the same result as the method described by <a href="http://www.indiana.edu/~kruschke/BEST/">Kruschke (2012)</a> I don't guarantee that it <i>does</i>. Use the version freely available on his <a href="http://www.indiana.edu/~kruschke/BEST/">site</a>. If you want to know more about Bayesian statistics do check out his <a href="http://www.indiana.edu/~kruschke/DoingBayesianDataAnalysis/">book</a>, which is great, or some of the <a href="http://stats.stackexchange.com/questions/125/what-is-the-best-introductory-bayesian-statistics-textbook">many other good introductory texts</a>.
+    </div>
+    <div id="about_div" class="sg-8 borderRight">
+        <b>About.</b>
+        This page was made for fun by me, Rasmus Bååth, a PHD student at <a href="http://www.lucs.lu.se">Lund University Cognitive Science</a>, Sweden. Libraries used: <a href="http://www.jstat.org/">jStat</a> for probability distributions, <a href="http://www.flotcharts.org/">Flot</a> for plotting and <a href="http://jquery.com/">JQuery</a> for this and that. For css styling I used <a href="http://thesquaregrid.com/">the Square Grid framework</a>. If you have any suggestions for improvements feel free to <a href="mailto:rasmus.baath@lucs.lu.se">drop me a message</a>.
+        
+    </div>
+</div>
+<div class="sg-35 about "></div>
+<div class="sg-35 about "><br /><span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/InteractiveResource" property="dct:title" rel="dct:type">Coded by <a xmlns:cc="http://creativecommons.org/ns#" href="http://sumsar.net/" property="cc:attributionName" rel="cc:attributionURL">Rasmus Bååth</a> 2012.<br/> Licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.</div>
+    
+</div><!-- end #container -->
+</div><!-- end #wrapper -->
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-15535612-4']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+    
 </body>
 </html>
