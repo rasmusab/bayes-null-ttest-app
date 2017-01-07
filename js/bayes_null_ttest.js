@@ -92,14 +92,15 @@ function new_sampler(data, null_prob, rscale, lower_rope, upper_rope) {
   var params = {
     mu: {type: "real", init: jStat.mean(data.y1)},
     eff_mu_diff: {type: "real", init: 0},
-    is_null: {type: "binary", init: null_prob},
-    sigma: {type: "real", lower: 0, init: jStat.stdev(y1.concat(y2)) }};
+    is_null: {type: "binary", init: 0},
+    log_sigma: {type: "real", init: Math.log(jStat.stdev(data.y1.concat(data.y2))) }};
   
   var log_post = function(s, d) {
     var log_post = 0;
     // Priors
     // implicit unif(-inf, inf) on s.mu
-    log_post += -Math.log(s.sigma) * 2; // same as log(1 / s.sigma^2), Jeffreys' prior;
+    s.sigma = Math.exp(s.log_sigma)
+
     log_post += ld.cauchy(s.eff_mu_diff, 0, rscale);
     if(s.is_null) {
       log_post += Math.log(null_prob);

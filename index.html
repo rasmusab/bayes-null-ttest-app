@@ -49,6 +49,7 @@
   var running_asynch = false;
   var chain;
   var eff_size_xlim = [-3.5, 3.5];
+  
 
   $(document).ready(function() {
     update_null_prior_label();
@@ -71,8 +72,8 @@
     window.clearTimeout(plot_timeout_id)
     $("#start_button").html('Click to restart!');
 
-    y1 = string_to_num_array($("#data_group_1").val())
-    y2 = string_to_num_array($("#data_group_2").val())
+    var y1 = string_to_num_array($("#data_group_1").val())
+    var y2 = string_to_num_array($("#data_group_2").val())
 
     try {
       jStat.map(y1.concat(y2), function(x) {
@@ -236,23 +237,22 @@
           <!-- Random data, replace with something more interesting. -->
           <div class="item_title">Data - Group 1</div>
           <textarea id="data_group_1" style="width: 100%; height: 100px; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; ">
-            17.9, -1.97, -10.7, -06.3, 08.4, 12.5, -03., 09., 08.8, 21.7, 12.1
+            1.9, 0.8, 1.1, 0.1, -0.1, 4.4, 5.5, 1.6, 4.6, 3.4
           </textarea>
           <!-- Random data, replace with something more interesting. -->
           <div class="item_title">Data - Group 2</div>
           <textarea id="data_group_2" style="width: 100%; height: 100px; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; ">
-            15., 17., 05.3, 07.8, -00.3, 02.7, -06.9, 11.5, -01.4, 14.3, 18.2, 16.9, 15.5, 09.4, 06.9, 06.2, 03.1, 07.9, -02.7
+            0.7, -1.6, -0.2, -1.2, -0.1, 3.4, 3.7, 0.8, 0, 2
           </textarea>
         </div>
         <div id="instructions_div" class="sg-25">
           <p>
-            This web app implements
-
-
-             an online version of John Kruschke's <a href="http://www.indiana.edu/~kruschke/BEST/"><i>Bayesian estimation supersedes the t-test (BEST)</i></a>, a Bayesian model that can be used where you classically would use a two-sample t-test. BEST estimates the difference in means between two groups and yields a probability distribution over the difference. From this distribution we can take the mean credible value as our best guess of the actual difference and the 95% <i>Highest Density Interval</i> (HDI) as the range were the actual difference is with 95% credibility. It can also be useful to look at how credible it is that the difference between the two groups is &lt; 0 or &gt; 0.
-          </p>
-          <p>
-            To try it out just enter some data below or run with the data that is already entered, the heights in m of the winning team of the 2012 NBA finals (group 1) and the winning team of Stanley cup 2012 (group 2). Data can be entered in almost any way, separated by spaces, commas, newlines, etc.
+            The purpose of this web app is twofold: 
+              <ul>
+                <li>To allows you to run a Bayesian version of a paired t-test from the comfort of your own browser.</li>
+                <li>To allow you to contrast the Bayes Factor view </li>
+              </ul>
+ 
           </p>
           <!--<p>
             The MCMC method used is an adaptive Metropolis-within-Gibbs sampler described by <a href="http://dx.doi.org/10.1198/jcgs.2009.06134 ">Roberts and Rosenthal (2009)</a>. Everything is implemented in javascript and runs in the browser. If the output looks strange try to increase the number of burn-in steps and the number of sample steps.
@@ -313,8 +313,13 @@
           <div class="item_description">The prior on the effect size defined as (µ₁ - µ₂) / σ </div>
         </div>
         <div id="log_wrapper_div" class="sg-16">
-        <center><h3>Some things to try out</h3></center>
+          <center><h3>Some things to try out</h3></center>
+        
         <p>...</p>
+        
+
+
+
         <!--
           <div class="item_title">Log</div>
           <textarea id="log" style="width: 100%; height: 220px; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; "></textarea>
@@ -389,7 +394,7 @@
       <br>&nbsp;
       <br>&nbsp;
     </p>
-      <b>About.</b> This web app was created by me,  <a href="http://www.sumsar.net">Rasmus Bååth</a>. Libraries used: <a href="http://www.jstat.org/">jStat</a> for some statistical functions, <a href="http://www.flotcharts.org/">Flot</a> for plotting and <a href="http://jquery.com/">JQuery</a> for this and that. For css styling I used <a href="http://thesquaregrid.com/">the Square Grid framework</a>. For MCMC I used my homegrown <a href="https://github.com/rasmusab/bayes.js">bayes.js</a> framework. If you have any suggestions for improvements feel free to <a href="mailto:rasmus.baath@gmail.com">drop me a message</a>.
+      <b>About.</b> This web app was created by me,  <a href="http://www.sumsar.net">Rasmus Bååth</a>. Libraries used: <a href="http://www.jstat.org/">jStat</a> for some statistical functions, <a href="http://www.flotcharts.org/">Flot</a> for plotting and <a href="http://jquery.com/">JQuery</a> for this and that. For css styling I used <a href="http://thesquaregrid.com/">the Square Grid framework</a>. For MCMC I used my homegrown <a href="https://github.com/rasmusab/bayes.js">bayes.js</a> framework. If you have any suggestions for improvements feel free to <a href="mailto:rasmus.baath@gmail.com">drop me a message</a>. <b>A word of caution.</b> This web app should be considered a demo and if you want to include a Bayesian version of a t-test in a publication I recommend you use, for example, <a href="http://www.indiana.edu/~kruschke/BEST/">BEST</a> or the <a href="https://github.com/richarddmorey/BayesFactor">BayesFactor package</a>.  
     </div>
     <div class="sg-35 page_bottom ">
       <br />
