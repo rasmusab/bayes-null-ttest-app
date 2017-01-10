@@ -49,7 +49,7 @@
   var running_asynch = false;
   var chain;
   var eff_size_xlim = [-3.5, 3.5];
-  
+
 
   $(document).ready(function() {
     update_null_prior_label();
@@ -232,28 +232,63 @@
         <h1>A Bayesian t-test: Bayes factors as a special case of estimation</h1>
       </div>
       <div id="data_and_instruction_div" class="sg-35 sgParent">
-        <div id="data_wrapper_div" class="sg-8 borderRight">
-          <br/>
-          <!-- Random data, replace with something more interesting. -->
-          <div class="item_title">Data - Group 1</div>
-          <textarea id="data_group_1" style="width: 100%; height: 100px; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; ">
-            1.9, 0.8, 1.1, 0.1, -0.1, 4.4, 5.5, 1.6, 4.6, 3.4
-          </textarea>
-          <!-- Random data, replace with something more interesting. -->
-          <div class="item_title">Data - Group 2</div>
-          <textarea id="data_group_2" style="width: 100%; height: 100px; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; ">
-            0.7, -1.6, -0.2, -1.2, -0.1, 3.4, 3.7, 0.8, 0, 2
-          </textarea>
-        </div>
-        <div id="instructions_div" class="sg-25">
+        <div id="instructions_div" class="sg-35">
           <p>
             The purpose of this web app is twofold: 
-              <ul>
-                <li>To allows you to run a Bayesian version of a paired t-test from the comfort of your own browser.</li>
-                <li>To allow you to contrast the Bayes Factor view </li>
-              </ul>
- 
+            <ol>
+            <li>
+            To allow you to run a Bayesian version of a two sample t-test from the comfort of your own browser  
+            </li>
+            <li>
+              To allow you to contrast the Bayes factor perspective with the Bayesian estimation perspective.
+            </li>
+            </ol>
+              To use it, simply enter some data below and hit "Click to start!". &nbsp;
+
+        <a id = "more_info_button" href="javascript:void(0)">
+           → Click for more info ← 
+          </a>
+   </p>     
+        <div id = 'extra_info'>
+
+          <p>
+            This web app implements a Bayesian version of the t-test found in <a href="http://rouder.psyc.missouri.edu/sites/default/files/Rouder.JMP_.2012.pdf">Rouder et al. (2012)</a>. It assumes that the data from both both groups follow normal distributions with the
+            same standard deviation (σ) but where the means in both groups (µ₁ and µ₂) are either the same (the H0 model) or they can differ (the H1 model). For the H1 model the prior on the difference is a Cauchy distribution over the <i>effect size</i>, that is, the difference between the means of the groups scaled by the standard deviation: (µ₂ - µ₁) / σ.
           </p>
+          <p>From a Bayes Factors perspective you compare the likelihood that H0 would generate the observed data with the corresponding likelihood of H1. The result is a <i>Bayes factor</i>: the likelihood of H1 divided by the likelihood of H0 (or vice versa). If you assume that H0 and H1 was equally probable to begin with, then the Bayes factor can be interpreted as the odds in favor of H1 (or H0). </p>
+
+          <p>
+          From a Bayesian estimation prespective you can get numerically identical results by assuming a prior over the effect size that puts 50% probability on no/0 difference and 50% on the Cauchy prior from H1. After fitting the model the result is a posterior distribuion over the effect size. Now,  the posterior probability of a non-zero effect size divided by the probability of a zero effect size will give you the odds in favour of H1, which will be the same as the Bayes factor. So for this specific model, the Bayes factor perspective can be seen as a special case of the estimation perspective. But from the estimation perspective you have some more flexibility, for example, you can put any prior probability on a zero effect size, not just 50%. 
+
+          You are also free to summarize the posterior in different ways, not just calculate Bayes factors. For example, it could be reasonable to define a <i>region of practical equivalence</i> (ROPE) where the effect size is so small that it's not practically relevant. Then you can sum up the probability that is within the ROPE (in favor of no relevant difference), higher than the ROPE (in favor of group 1 having a higher mean), and lower than the ROPE (in favor of group 2 having a higher mean). In the limit where the ROPE is just defined to be 0.0, the probability within and outside the ROPE will have the same probabilities as H0 and H1, respectively.
+             </p>
+        <a id = 'less_info_button' href="javascript:void(0)">
+          ↑↑↑ Click for less info ↑↑↑
+        </a>
+        </div>
+
+
+
+          <script>
+            $(function() {
+              
+              $( "#extra_info" ).hide();
+              $( "#more_info_button" ).click(function() {
+                if ( $( "#extra_info" ).is( ":hidden" ) ) {
+                  $( "#extra_info" ).show();
+                  $( "#more_info_button" ).hide();
+                }
+              });
+              
+              $( "#less_info_button" ).click(function() {
+                if ( $( "#extra_info" ).is( ":visible" ) ) {
+                  $( "#extra_info" ).hide();
+                  $( "#more_info_button" ).show();
+                }
+              });
+            });
+
+            </script>
           <!--<p>
             The MCMC method used is an adaptive Metropolis-within-Gibbs sampler described by <a href="http://dx.doi.org/10.1198/jcgs.2009.06134 ">Roberts and Rosenthal (2009)</a>. Everything is implemented in javascript and runs in the browser. If the output looks strange try to increase the number of burn-in steps and the number of sample steps.
         </p>-->
@@ -261,6 +296,10 @@
       </div>
       <div class="sg-35 sgParent">
         <div id="parameters_1_div" class="sg-8">
+          <!-- Random data, replace with something more interesting. -->
+          <div class="item_title">Data - Group 1</div>
+          <textarea id="data_group_1" style="width: 100%; height: 145px; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; ">3.3, 1, 2, 1.7, 3.7, 5.7, 3.7, 0.7, 4.7, 3.7, 7, 1.7, 6.3, 
+3.7, 3.3, 2.3, 4.7, 6.7</textarea>
           <div class="item_title">Prior prob. of no difference: <span id="null_prior_label">0.5</span> </div>
           <input type="range" id="null_prior_input" min="0.0" max="1.0" step="0.01" defaultValue="0.5" oninput="update_null_prior_label()" style="width: 90%">
           <script type="text/javascript">
@@ -291,6 +330,10 @@
           <button id="start_button" type="button" onclick="run_model()" style="width: 100%; height: 60px">Click to start!</button>
         </div>
         <div id="parameters_2_div" class="sg-8 borderRight">
+         <!-- Random data, replace with something more interesting. -->
+          <div class="item_title">Data - Group 2</div>
+          <textarea id="data_group_2" style="width: 100%; height: 145px; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; ">6, 5.7, 6, 3.7, 5, 9, 6, 9, 2.3, 4.7, 5.7, 7.7, 6.7, 4.7, 5.7, 
+3.3, 6, 5, 6, 5, 5.3</textarea>
           <div class="item_title">Lower ROPE: <span id="lower_rope_label">-0.2</span> </div>
           <input type="range" id="lower_rope_input" min="-3" max="3.0" step="0.1" value="-0.2" oninput="update_rope_label()" style="width: 90%" />
           <div class="item_title">Upper ROPE: <span id="upper_rope_label">0.2</span> </div>
@@ -310,12 +353,18 @@
           </script>
           <div class="item_title">Prior - Effect size</div>
           <div id="prior_eff_size_plot" style="height: 200px;width:100%;"></div>
-          <div class="item_description">The prior on the effect size defined as (µ₁ - µ₂) / σ </div>
+          <div class="item_description">The prior on the effect size defined as (µ₂ - µ₁) / σ </div>
         </div>
         <div id="log_wrapper_div" class="sg-16">
           <center><h3>Some things to try out</h3></center>
         
-        <p>...</p>
+        <ul>
+          <li>Change the prior probability of no/0 difference. For example, set the prior to a very low probability if you want to deemphasize that zero difference has a special status.  </li>
+          <li>Explore what happens when you change the with of the region of practical equivalence (ROPE). What happens when the ROPE is just centered on 0.0? How does that relate to the Bayes Factor?</li>
+          <li>The default data set comes from a study by <a href="https://doi.org/10.1177/0956797615572906">Schroeder and Epley (2015)</a> who looked at (among other things) how inteligent job applicants were perceived when their pitch was presented either as transcribed text (group 1) or as an audio recording (group 2). Try to change the data and see how that affects outcome of the model.</li>
+          <li>In this web app, you are given the choice of three different scales on the prior on the effect size, corresponding to the prior information that the effect size could be medium, large (wide) or very large (ultra wide). What happens with the Bayes Factor and the posterior probability within and outside the ROPE when you change this prior?</li>
+          <li>To fit the model this web app uses Markov chain Monte Carlo (MCMC) and the options <i>Nbr of burn-in samples</i> and <i>Nbr of samples</i> decide the accuracy of the MCMC estimate (where larger is better). What's the effect of making the number of MCMC samples really small or really large? </li>
+        </ul>
         
 
 
@@ -351,8 +400,8 @@
     <div id="more_results_wrapper_div">
       <div id="more_results_parent_div" class="sg-35 sgParent">
         <div id="more_results_div" class="sg-35 borderLeft">
-          <h2>More Results - The Rest of the Parameters!</h2>
-          <p>Even though the difference between the means of the groups usually is the main interest, BEST also estimates other parameters. Except for the means and SDs of the groups BEST estimates a measure of to what degree there are outliers in the data that makes the distribution of the data deviate from normality. This measure is labeled "Normality" below where a normality estimate &lt; 1.5 indicates that the data isn't normally distributed. BEST is however robust to outliers to some degree while outliers are a problem for a classical t-test. More about the assumptions of BEST and the advantages of Bayesian estimation is found in <a href="http://www.indiana.edu/~kruschke/BEST/">Kruschke (2012)</a>.</p>
+          <h2>The Rest of the Parameters.</h2>
+          <p>Even though estimating the effect size is the main focus here, we also get estimates for the rest of the parameters in the model. All the plots show a 95% highest density interval (HDI), the shortest interval that contain 95% of the probability, and the posterior mean (in green) which can be interprete as a "best guess" for the paramter value. </p>
         </div>
       </div>
       <div id="group1_mean_plot_wrapper_div" class="sg-8">
