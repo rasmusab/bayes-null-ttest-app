@@ -240,7 +240,7 @@
             To allow you to run a Bayesian version of a two sample t-test from the comfort of your own browser  
             </li>
             <li>
-              To allow you to contrast the Bayes factor perspective with the Bayesian estimation perspective.
+              To allow you to contrast the Bayes factor perspective with the Bayesian estimation perspective. 
             </li>
             </ol>
               To use it, simply enter some data below and hit "Click to start!". &nbsp;
@@ -248,25 +248,25 @@
         <a id = "more_info_button" href="javascript:void(0)">
            → Click for more info ← 
           </a>
-   </p>     
+        </p>    
         <div id = 'extra_info'>
 
           <p>
-            This web app implements a Bayesian version of the t-test found in <a href="http://rouder.psyc.missouri.edu/sites/default/files/Rouder.JMP_.2012.pdf">Rouder et al. (2012)</a>. It assumes that the data from both both groups follow normal distributions with the
-            same standard deviation (σ) but where the means in both groups (µ₁ and µ₂) are either the same (the H0 model) or they can differ (the H1 model). For the H1 model the prior on the difference is a Cauchy distribution over the <i>effect size</i>, that is, the difference between the means of the groups scaled by the standard deviation: (µ₂ - µ₁) / σ.
+            This web app implements a version of the Bayesian t-test found in <a href="http://rouder.psyc.missouri.edu/sites/default/files/Rouder.JMP_.2012.pdf">Rouder et al. (2012)</a>. It assumes that the data from both groups follow normal distributions with the
+            same standard deviation (σ) but where the means in both groups (µ₁ and µ₂) are either the same (the H0 model) or they can differ (the H1 model). For the H1 model the prior on the difference is a Cauchy distribution over the <i>effect size</i>, that is, the difference between the means of the groups scaled by the standard deviation: (µ₂ - µ₁) / σ. (Note: Although we refer to different “models” here for pedagogical reasons, this app actually estimates a single statistical model. The model includes both an estimated effect size as well as a switching parameter used to determine whether or not the effect size is exactly zero).
           </p>
-          <p>From a Bayes Factors perspective you compare the likelihood that H0 would generate the observed data with the corresponding likelihood of H1. The result is a <i>Bayes factor</i>: the likelihood of H1 divided by the likelihood of H0 (or vice versa). If you assume that H0 and H1 was equally probable to begin with, then the Bayes factor can be interpreted as the odds in favor of H1 (or H0). </p>
+          <p>From a Bayes Factors perspective you compare the likelihood that H0 would generate the observed data with the corresponding likelihood of H1. The result is a <i>Bayes factor</i>: the likelihood of H1 divided by the likelihood of H0 (or vice versa). If you assume that H0 and H1 were equally probable to begin with, then the Bayes factor can be interpreted as the posterior odds in favor of H1 (or H0). </p>
 
           <p>
           From a Bayesian estimation perspective you can get numerically identical results by assuming a prior over the effect size that puts 50% probability on no/0 difference and 50% on the Cauchy prior from H1. After fitting the model the result is a posterior distribution over the effect size. Now,  the posterior probability of a non-zero effect size divided by the probability of a zero effect size will give you the odds in favor of H1, which will be the same as the Bayes factor. So for this specific model, the Bayes factor perspective can be seen as a special case of the estimation perspective. But from the estimation perspective you have some more flexibility, for example, you can put any prior probability on a zero effect size, not just 50%. 
           </p>
 
           <p>
-          You are also free to summarize the posterior in different ways, not just calculate Bayes factors. For example, it could be reasonable to define a <i>region of practical equivalence</i> (ROPE) where the effect size is so small that it's not practically relevant. Then you can sum up the probability that is within the ROPE (in favor of no relevant difference), lower than the ROPE (in favor of group 1 having a higher mean), and higher than the ROPE (in favor of group 2 having a higher mean). In the limit where the ROPE is just defined to be 0.0, the probability within and outside the ROPE will have the same probabilities as H0 and H1, respectively.
+          You are also free to summarize the posterior in different ways, not just calculate Bayes factors. For example, it could be reasonable to define a <i>region of practical equivalence</i> (ROPE) where the effect size is so small that it's not practically relevant (see [Kruschke, 2013](http://www.indiana.edu/~kruschke/articles/Kruschke2013JEPG.pdf)). Then you can sum up the probability that is within the ROPE (in favor of no relevant difference), lower than the ROPE (in favor of group 1 having a higher mean), and higher than the ROPE (in favor of group 2 having a higher mean). In the limit where the ROPE is just defined to be 0.0 - 0.0, the probability within and outside the ROPE will have the same probabilities as H0 and H1, respectively. The ROPE approach may be particularly useful when the prior probability of an exactly zero effect is very low or even zero, but a researcher wishes to determine whether an effect size is large enough to be practically significant. 
           </p>
           <p>
 
-          So, in summary, for certain models, calculating Bayes factor or estimating the effect size can give numerically identical results. The difference is in how those results are interpreted and presented. The Bayes factor approach contrasts <i>two</i> different models and give you the probability for each (assuming they were equally probable to begin with). The estimation approach gives you a probability distribution over what the effect size could be using <i>one</i> model, and you are free to summarize this distribution in any way you want, for example, by looking at the probability that the effect size is close to zero. 
+          So, in summary, for certain models, calculating Bayes factor or estimating the effect size can give numerically identical results. The difference is in how those results are interpreted and presented. The Bayes factor approach contrasts <i>two</i> different models and gives you the probability for each (assuming they were equally probable to begin with). The estimation approach gives you a probability distribution over what the effect size could be using <i>one</i> model, and you are free to summarize this distribution in any way you want, for example, by looking at the probability that the effect size is close to zero. 
              </p>
         <a id = 'less_info_button' href="javascript:void(0)">
           ↑↑↑ Click for less info ↑↑↑
