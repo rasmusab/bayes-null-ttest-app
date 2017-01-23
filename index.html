@@ -118,7 +118,7 @@
         write_log("\n-- Started sampling phase --\n")
         $("#animated_plots_div").show();
         chain = sampler.sample(50)
-        sample_timeout_id = n_samples_asynch(n_samples, 50)
+        sample_timeout_id = n_samples_asynch(n_samples, 500)
         plot_asynch()
       }
     }
@@ -179,19 +179,20 @@
       $("#more_results_wrapper_div").show();
       plot_prob_cat("regions_barplot", chain.region, [-1, 0, 1], ["Low", "Eq.", "High"]);
       plot_prob_cat("model_prob_barplot", chain.is_alt, [0, 1], ["H0", "H1"]);
+      var null_prob = parseFloat(document.getElementById('null_prior_input').value);
+      var prior_odds = (1 - null_prob) / null_prob
       var h1_prob = (jStat.sum(chain.is_alt) + 1) / (chain.is_alt.length + 2)
-      var bf_for_h1 = h1_prob / (1 - h1_prob)
-      $("#bf_span").html((Math.round(h1_prob * 100) / 100) +
-                                     " / " + 
-                        (Math.round((1 - h1_prob) * 100) / 100) +
-                                     " = " + 
-                        (Math.round(bf_for_h1 * 100) / 100) )
+      var odds_for_h1 = h1_prob / (1 - h1_prob)
+      var bf_for_h1 = odds_for_h1 / prior_odds 
+      var pf = function(x) {
+        return Math.round(x * 100) / 100;
+      }
+      $("#odds_span").html( pf(h1_prob) + " / " + pf(1 - h1_prob) + " = " + pf(odds_for_h1) )
+      $("#bf_span").html( pf(bf_for_h1 ))
 
       var plot_data = chain_to_plot_data(chain, Math.ceil(n_samples / 1000))
 
 
-      
-      // Todo: Not fixed below
       mean_chains = chain.mu.concat(chain.mu2)
       mean_xlim = [jStat.min(mean_chains), jStat.max(mean_chains)]
 
@@ -304,7 +305,7 @@
         <div id="parameters_1_div" class="sg-8">
           <!-- Random data, replace with something more interesting. -->
           <div class="item_title">Data - Group 1</div>
-          <textarea id="data_group_1" style="width: 100%; height: 145px; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; ">3.3, 1, 2, 1.7, 3.7, 5.7, 3.7, 0.7, 4.7, 3.7, 7, 1.7, 6.3, 
+          <textarea id="data_group_1" style="width: 100%; height: 150px; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; ">3.3, 1, 2, 1.7, 3.7, 5.7, 3.7, 0.7, 4.7, 3.7, 7, 1.7, 6.3, 
 3.7, 3.3, 2.3, 4.7, 6.7</textarea>
           <div class="item_title">Prior prob. of no difference: <span id="null_prior_label">0.5</span> </div>
           <input type="range" id="null_prior_input" min="0.0" max="1.0" step="0.01" defaultValue="0.5" oninput="update_null_prior_label()" style="width: 90%">
@@ -330,7 +331,7 @@
           <div class="item_title">Nbr of burn-in samples</div>
           <input id="nbr_of_burnin_input" type="text" name="nbr_of_burnin" style="width: 90%;" value="10000" />
           <div class="item_title">Nbr of samples</div>
-          <input id="nbr_of_samples_input" type="text" name="nbr_of_samples" value="20000" style="width: 90%;" />
+          <input id="nbr_of_samples_input" type="text" name="nbr_of_samples" value="50000" style="width: 90%;" />
           <br/>
           <br/>
           <button id="start_button" type="button" onclick="run_model()" style="width: 100%; height: 60px">Click to start!</button>
@@ -338,7 +339,7 @@
         <div id="parameters_2_div" class="sg-8 borderRight">
          <!-- Random data, replace with something more interesting. -->
           <div class="item_title">Data - Group 2</div>
-          <textarea id="data_group_2" style="width: 100%; height: 145px; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; ">6, 5.7, 6, 3.7, 5, 9, 6, 9, 2.3, 4.7, 5.7, 7.7, 6.7, 4.7, 5.7, 
+          <textarea id="data_group_2" style="width: 100%; height: 150px; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; ">6, 5.7, 6, 3.7, 5, 9, 6, 9, 2.3, 4.7, 5.7, 7.7, 6.7, 4.7, 5.7, 
 3.3, 6, 5, 6, 5, 5.3</textarea>
           <div class="item_title">Lower ROPE: <span id="lower_rope_label">-0.2</span> </div>
           <input type="range" id="lower_rope_input" min="-3" max="3.0" step="0.1" value="-0.2" oninput="update_rope_label()" style="width: 90%" />
@@ -365,7 +366,7 @@
           <center><h3>Some things to try out</h3></center>
         
         <ul>
-          <li>Change the prior probability of no/0 difference. For example, set the prior to a very low probability if you want to deemphasize that zero difference has a special status.  </li>
+          <li>Change the prior probability of no/0 difference. For example, set the prior to a very low probability if you want to deemphasize that zero difference has a special status. Note that when this prior is 0.5 the posterior odds and the Bayes factor in favor of H1 are exactly the same. </li>
           <li>Explore what happens when you change the with of the region of practical equivalence (ROPE). What happens when the ROPE is just centered on 0.0? How does that relate to the Bayes Factor?</li>
           <li>The default data set comes from a study by <a href="https://doi.org/10.1177/0956797615572906">Schroeder and Epley (2015)</a> who looked at (among other things) how intelligent job applicants were perceived when their pitch was presented either as transcribed text (group 1) or as an audio recording (group 2). Try to change the data and see how that affects outcome of the model.</li>
           <li>In this web app, you are given the choice of three different scales on the prior on the effect size, corresponding to the prior information that the effect size could be medium, large (wide) or very large (ultra wide). What happens with the Bayes Factor and the posterior probability within and outside the ROPE when you change this prior?</li>
@@ -400,7 +401,7 @@
         <div id="model_prob_barplot_wrapper_div" class="sg-8">
           <div class="item_title">Posterior Prob of H0/H1</div>
           <div id="model_prob_barplot" style="height: 200px;"></div>
-          <div class="item_description">If the prob. of no difference is set to 0.5 this gives a BF of <span id="bf_span">...</span> in favor of H1.</div>
+          <div class="item_description">This gives odds of <span id="odds_span">...</span> in favor of H1. Compare this with the BF of <span id="bf_span">...</span>.</div>
         </div>
       </div>
     <div id="more_results_wrapper_div">

@@ -1,5 +1,5 @@
 function dt_non_norm(x, mean, sd, df) {
-    return 1 / sd * jStat.studentt.pdf( (x - mean) / sd, df)
+    return 1 / sd * jStat.studentt.pdf( (x - mean) / sd, df);
 }
 
 function paired_t_test(x1, x2) {
